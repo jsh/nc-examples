@@ -1,0 +1,25 @@
+#!/opt/homebrew/bin/bash
+# Demo netcat using fifos.
+#   before running, start a server
+#   with `nc -l 50001`
+#
+#   requires bash 4.4 or above
+#   to understand ";;&" syntax for "Check next case, too."
+
+PORT=50001
+rm -f fifo_in   # cleanliness is next to godliness
+mkfifo fifo_in  # a named pipe. really a pipe, so not on disk,
+                # but a user-visible, virtual file in the "filesystem" 
+
+nc localhost $PORT < fifo_in |
+    while read -r line; do          # read from the nc process
+        case $line in               # examine all input from the far end
+             (HI|HELLO|HOWDY)       # catch and reply to special case
+                printf '%s\n' 'HELLO BACK!'
+                ;;&                 # also check below
+            (*)                     # report receipt of everything
+                # NB: stderr isn't passed to server, just printed here.
+                printf >&2 '%s\n' "Received line: $line"
+                ;;
+        esac
+    done > fifo_in
