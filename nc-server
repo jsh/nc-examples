@@ -1,0 +1,19 @@
+#!/opt/homebrew/bin/bash
+#   Start a server with `nc -l $PORT` (default 50000)
+#   to illustrate history and command-line editing
+
+PORT=${1:-50000}                            # first arg is port, default 50000
+set -o vi  # Use vi mode. What the heck.
+
+coproc netcat { nc -l localhost $PORT; }    # create coprocess named "netcat"
+# nc is a child process
+# the parent is this shell script
+# netcat[0] is the file descriptor of nc's *output*
+# netcat[1] is the file descriptor of nc's *input
+
+while [[ $netcat_PID ]] &&                  # so long as the child exists
+  read -e line                              # and it has output,
+  do                                        # '-e' permit editing
+    echo $line >&${netcat[1]}
+    history -s -- "$line"                   # save history
+  done
